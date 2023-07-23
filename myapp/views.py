@@ -107,10 +107,13 @@ def item_of_the_day(request,pk=None):
     
     return Response({'message':'invalid request'},status.HTTP_400_BAD_REQUEST)
 
-#--------------------handle orders-----------------------
+#--------------------handle delivery and orders-----------------------
 class Order_delivery(viewsets.ViewSet):
     permission_classes = [permissions.IsAuthenticated]
     def list(self,request):
         if request.user.groups.filter(name='delivery_crew').exists():
-            item = get_object_or_404(Order,delivery_crew=request.user.username)
+            orders = Order.objects.filter(delivery_crew=request.user.id)
+            serialized_item = OrderSerializers(orders,many=True)
+            return Response(serialized_item.data)
+        return Response({'message':'user does not exists'},status.HTTP_401_UNAUTHORIZED)
             

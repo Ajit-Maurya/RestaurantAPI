@@ -11,5 +11,6 @@ urlpatterns = [
     path('add-to-group/',views.assign_group),
     path('item-of-the-day/',views.item_of_the_day),
     path('item-of-the-day/<int:pk>/',views.item_of_the_day),
+    path('order_and_delivery/',views.Order_delivery.as_view({'get':'list'})),
     # path('category/<int:pk>/',views.category_detail,name='category-detail'),
 ]

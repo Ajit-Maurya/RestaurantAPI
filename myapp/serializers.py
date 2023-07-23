@@ -19,6 +19,7 @@ class CartSerializer(serializers.ModelSerializer):
         fields = ['user','menuitem','qauntity','unit_price','price']
 
 class OrderSerializers(serializers.ModelSerializer):
+    # delivery_person = serializers.CharField(source='delivery_crew.username',read_only=True)
     class Meta:
         model = models.Order
         fields = ['user','delivery_crew','status','total','date']
