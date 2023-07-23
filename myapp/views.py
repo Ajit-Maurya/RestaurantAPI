@@ -1,13 +1,14 @@
 
 from . import serializers
 from .models import MenuItem,Category
-from rest_framework import generics
+from .models import Order
+from rest_framework import generics,viewsets
 from rest_framework import permissions,status
 from django.contrib.auth.models import User,Group
 from rest_framework.decorators import api_view,permission_classes
 from django.shortcuts import get_object_or_404
 from rest_framework.response import Response
-from .serializers import MenuItemSerializer
+from .serializers import MenuItemSerializer,OrderSerializers
 # from django.db import transaction
 # Create your views here.
 
@@ -106,3 +107,10 @@ def item_of_the_day(request,pk=None):
     
     return Response({'message':'invalid request'},status.HTTP_400_BAD_REQUEST)
 
+#--------------------handle orders-----------------------
+class Order_delivery(viewsets.ViewSet):
+    permission_classes = [permissions.IsAuthenticated]
+    def list(self,request):
+        if request.user.groups.filter(name='delivery_crew').exists():
+            item = get_object_or_404(Order,delivery_crew=request.user.username)
+            
