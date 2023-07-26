@@ -145,7 +145,13 @@ class Cart_API(viewsets.ViewSet):
         qauntity = request.data['qauntity']
         unit_price = request.data['unit_price']
         price = request.data['price']
-        serializer = CartSerializer(user=request.user.id,menuitem=menuitem,qauntity=qauntity,unit_price=unit_price,price=price)
+        serializer = CartSerializer(data={
+            'user': request.user.id,
+            'menuitem': menuitem,
+            'qauntity': qauntity,
+            'unit_price': unit_price,
+            'price': price
+        })
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data,status.HTTP_201_CREATED)
