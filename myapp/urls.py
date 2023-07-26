@@ -13,5 +13,7 @@ urlpatterns = [
     path('item-of-the-day/<int:pk>',views.item_of_the_day),
     path('order_and_delivery',views.Order_delivery.as_view({'get':'list'})),
     path('order_and_delivery/<int:pk>',views.Order_delivery.as_view({'patch':'partial_update'})),
+    path('cart',views.Cart_API.as_view({'get':'list','post':'create'})),
+    path('place_order',views.place_order),
     # path('category/<int:pk>/',views.category_detail,name='category-detail'),
 ]

@@ -9,7 +9,8 @@ from rest_framework.decorators import api_view,permission_classes
 from django.shortcuts import get_object_or_404
 from rest_framework.response import Response
 from .serializers import MenuItemSerializer,OrderSerializers
-from .serializers import CartSerializer
+from .serializers import CartSerializer,OrderItemSerializers
+from datetime import datetime
 # from django.db import transaction
 # Create your views here.
 
@@ -140,8 +141,32 @@ class Cart_API(viewsets.ViewSet):
         return Response(serialized_cart.data)
     
     def create(self,request):
-        serializer = CartSerializer(data=request.data)
+        menuitem = request.data['menuitem']
+        qauntity = request.data['qauntity']
+        unit_price = request.data['unit_price']
+        price = request.data['price']
+        serializer = CartSerializer(user=request.user.id,menuitem=menuitem,qauntity=qauntity,unit_price=unit_price,price=price)
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data,status.HTTP_201_CREATED)
         return Response(serializer.errors,status.HTTP_400_BAD_REQUEST)
+    
+#--------------- place orders-----------------------------
+@api_view()
+@permission_classes([permissions.IsAuthenticated])
+def place_order(request):
+    cart = Cart.objects.filter(user=request.user.id)
+    total = 0
+    for item in cart:
+        total += item.price
+    current_date = datetime.now().date()
+    serializer_order = OrderSerializers(user=request.user.id,delivery_crew=0,status=0,total=total,date=current_date)
+    if serializer_order.is_valid():
+        serializer_order.save()
+    
+    order = Order.objects.get(user=request.user.id)
+    for item in cart:
+        serializer_orderItem = OrderItemSerializers(order=order.id,menuitem=item.menuitem,qauntity=item.qauntity,unit_price=item.unit_price,price=item.price)
+        if serializer_orderItem.is_valid():
+            serializer_orderItem.save()
+    return Response({'message':'Order is place'},status.HTTP_202_ACCEPTED)
