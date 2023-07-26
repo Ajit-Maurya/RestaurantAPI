@@ -1,7 +1,7 @@
 
 from . import serializers
 from .models import MenuItem,Category
-from .models import Order
+from .models import Order,Cart
 from rest_framework import generics,viewsets
 from rest_framework import permissions,status
 from django.contrib.auth.models import User,Group
@@ -9,6 +9,7 @@ from rest_framework.decorators import api_view,permission_classes
 from django.shortcuts import get_object_or_404
 from rest_framework.response import Response
 from .serializers import MenuItemSerializer,OrderSerializers
+from .serializers import CartSerializer
 # from django.db import transaction
 # Create your views here.
 
@@ -115,12 +116,6 @@ class Order_delivery(viewsets.ViewSet):
             orders = Order.objects.filter(delivery_crew=request.user.id)
             serialized_item = OrderSerializers(orders,many=True)
             return Response(serialized_item.data)
-        
-        #customer's can see their orders with below block of code
-        elif request.user.groups.filter(name='customer').exists():
-            orders = Order.objects.filter(user=request.user.id)
-            serialized_order = OrderSerializers(orders,many=True)
-            return Response(serialized_order.data)
         return Response({'message':'user does not exists'},status.HTTP_401_UNAUTHORIZED)
         
     def partial_update(self,request,pk):
@@ -135,4 +130,18 @@ class Order_delivery(viewsets.ViewSet):
         # elif request.user.groups.filter(name='manager').exists():
             
         return Response({'message':'Unauthorized user'},status.HTTP_401_UNAUTHORIZED)
-        
+
+#---------------------Cart api------------------------------------
+class Cart_API(viewsets.ViewSet):
+    permission_classes = [permissions.IsAuthenticated]
+    def list(self,request):
+        cart = Cart.objects.filter(user=request.user.id)
+        serialized_cart = CartSerializer(cart,many=True)
+        return Response(serialized_cart.data)
+    
+    def create(self,request):
+        serializer = CartSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data,status.HTTP_201_CREATED)
+        return Response(serializer.errors,status.HTTP_400_BAD_REQUEST)
