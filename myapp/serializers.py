@@ -22,7 +22,7 @@ class OrderSerializers(serializers.ModelSerializer):
     # delivery_person = serializers.CharField(source='delivery_crew.username',read_only=True)
     class Meta:
         model = models.Order
-        fields = ['user','delivery_crew','status','total','date']
+        fields = ['id','user','delivery_crew','status','total','date']
 
 class OrderItemSerializers(serializers.ModelSerializer):
     class Meta:

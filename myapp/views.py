@@ -115,5 +115,24 @@ class Order_delivery(viewsets.ViewSet):
             orders = Order.objects.filter(delivery_crew=request.user.id)
             serialized_item = OrderSerializers(orders,many=True)
             return Response(serialized_item.data)
+        
+        #customer's can see their orders with below block of code
+        elif request.user.groups.filter(name='customer').exists():
+            orders = Order.objects.filter(user=request.user.id)
+            serialized_order = OrderSerializers(orders,many=True)
+            return Response(serialized_order.data)
         return Response({'message':'user does not exists'},status.HTTP_401_UNAUTHORIZED)
+        
+    def partial_update(self,request,pk):
+        #above is required since there can be cases where 
+        #delivery person has multiple delivery and only 
+        #finished one the delivery
+        if request.user.groups.filter(name='delivery_crew').exists():
+            order = get_object_or_404(Order,pk=pk,delivery_crew=request.user.id)
+            order.status = True
+            order.save()
+            return Response({'messege':'Order updated'},status.HTTP_202_ACCEPTED)
+        # elif request.user.groups.filter(name='manager').exists():
             
+        return Response({'message':'Unauthorized user'},status.HTTP_401_UNAUTHORIZED)
+        
