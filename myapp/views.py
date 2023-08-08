@@ -186,10 +186,10 @@ def place_order(request):
 
                 # Create OrderItem instances for each item in the cart
                 for item in cart:
-                    print(item.menuitem)
+                    # print(item.menuitem)
                     serializer_order_item = OrderItemSerializers(data={
                         'order': order.id,
-                        'menuitem': item.menuitem,
+                        'menuitem': item.menuitem.pk,
                         'qauntity': item.qauntity,
                         'unit_price': item.unit_price,
                         'price': item.price,
