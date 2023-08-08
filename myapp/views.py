@@ -11,6 +11,8 @@ from rest_framework.response import Response
 from .serializers import MenuItemSerializer,OrderSerializers
 from .serializers import CartSerializer,OrderItemSerializers
 from datetime import datetime
+import decimal
+from django.db import transaction
 # from django.db import transaction
 # Create your views here.
 
@@ -158,21 +160,51 @@ class Cart_API(viewsets.ViewSet):
         return Response(serializer.errors,status.HTTP_400_BAD_REQUEST)
     
 #--------------- place orders-----------------------------
-@api_view()
+@api_view(['POST'])
 @permission_classes([permissions.IsAuthenticated])
 def place_order(request):
-    cart = Cart.objects.filter(user=request.user.id)
-    total = 0
-    for item in cart:
-        total += item.price
-    current_date = datetime.now().date()
-    serializer_order = OrderSerializers(user=request.user.id,delivery_crew=0,status=0,total=total,date=current_date)
-    if serializer_order.is_valid():
-        serializer_order.save()
-    
-    order = Order.objects.get(user=request.user.id)
-    for item in cart:
-        serializer_orderItem = OrderItemSerializers(order=order.id,menuitem=item.menuitem,qauntity=item.qauntity,unit_price=item.unit_price,price=item.price)
-        if serializer_orderItem.is_valid():
-            serializer_orderItem.save()
-    return Response({'message':'Order is place'},status.HTTP_202_ACCEPTED)
+    try:
+        with transaction.atomic():
+            cart = Cart.objects.filter(user=request.user.id)
+
+            if cart.exists():
+                total = decimal.Decimal('0.00')
+                for item in cart:
+                    total += item.price
+                current_date = datetime.now().date()
+
+                serializer_order = OrderSerializers(data={
+                    'user': request.user.id,
+                    'delivery_crew': None,
+                    'status': 0,
+                    'total': total,
+                    'date': current_date
+                })
+
+                serializer_order.is_valid(raise_exception=True)
+                order = serializer_order.save()
+
+                # Create OrderItem instances for each item in the cart
+                for item in cart:
+                    print(item.menuitem)
+                    serializer_order_item = OrderItemSerializers(data={
+                        'order': order.id,
+                        'menuitem': item.menuitem,
+                        'qauntity': item.qauntity,
+                        'unit_price': item.unit_price,
+                        'price': item.price,
+                    })
+                    serializer_order_item.is_valid(raise_exception=True)
+                    serializer_order_item.save()
+
+                # Delete the items from the cart after creating the order
+                cart.delete()
+
+            else:
+                return Response({'message': 'Cart is empty'}, status.HTTP_400_BAD_REQUEST)
+
+        return Response({'message': 'Order is placed'}, status.HTTP_202_ACCEPTED)
+
+    except Exception as e:
+        error_message = str(e.detail) if hasattr(e, 'detail') else 'Unknown error'
+        return Response({'message': error_message}, status.HTTP_400_BAD_REQUEST)
